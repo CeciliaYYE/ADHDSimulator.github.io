@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang='en'>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADHD Experience Simulation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            color: #f3f4f6;
+            line-height: 1.6;
+            transition: all 0.3s;
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            position: relative;
+        }
+
+        .status-bar {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            color: #1e293b;
+        }
+
+        #startScreen {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .start-btn {
+            background: #fcd34d;
+            color: #1e293b;
+            font-weight: bold;
+            padding: 1rem 2.5rem;
+            border-radius: 9999px;
+            margin-top: 2rem;
+            transition: all 0.3s;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .article-container {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+            margin-top: 2rem;
+            display: none;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.6s;
+            color: #1e293b;
+        }
+
+        .blue-heading {
+            color: #3b82f6;
+            margin: 1.5rem 0;
+        }
+
+        .text-link {
+            color: #10b981;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
+        /* Distraction styles */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            z-index: 9998;
+            display: none;
+        }
+
+        .thought-bubble {
+            position: fixed;
+            background: #bfdbfe;
+            padding: 1rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 300px;
+            z-index: 9999;
+        }
+
+        .impulse-popup {
+            position: fixed;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #fde047;
+            color: #1e293b;
+            padding: 1.5rem;
+            border-radius: 8px;
+            z-index: 9999;
+            font-size: 1.2rem;
+        }
+
+        .social-popup {
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 9999;
+        }
+
+        .jumping-dot {
+            position: fixed;
+            width: 24px;
+            height: 24px;
+            background: #ef4444;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translate(0);
+            }
+
+            25% {
+                transform: translate(8px, 8px);
+            }
+
+            50% {
+                transform: translate(-8px, -8px);
+            }
+
+            75% {
+                transform: translate(-8px, 8px);
+            }
+        }
+
+        @keyframes sink {
+            0% {
+                transform: translateY(0);
+            }
+
+            100% {
+                transform: translateY(20px);
+            }
+        }
+
+        @keyframes jump-vertical {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-100vh);
+            }
+        }
+
+        @keyframes jump-horizontal {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            50% {
+                transform: translateX(100vw);
+            }
+        }
+
+        .dimmed {
+            opacity: 0.3;
+            filter: blur(2px);
+        }
+
+        .earthquake {
+            animation: shake 0.1s linear infinite;
+        }
+
+        .sinking {
+            animation: sink 2.5s ease-in-out infinite alternate;
+        }
+
+        /* 新增优化样式 */
+        .dimmed {
+            opacity: 0.2 !important;
+            filter: blur(5px) !important;
+            transition: all 0.5s;
+        }
+
+        .thought-bubble {
+            position: fixed;
+            background: #bfdbfe;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 280px;
+            z-index: 9999;
+            font-size: 1.1rem;
+            color: #1e293b;
+            line-height: 1.5;
+        }
+
+        .social-popup {
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            min-width: 500px;
+            max-width: 700px;
+            background: white;
+            color: #1e293b;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        }
+
+        @keyframes sink {
+            0% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(40px);
+            }
+
+            100% {
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes jump {
+            0% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-20px);
+            }
+
+            100% {
+                transform: translateY(0);
+            }
+        }
+
+        /* 新增优化样式 */
+        .dimmed {
+            opacity: 0.2 !important;
+            filter: blur(5px) !important;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* 弹窗动画 */
+        .popup-enter {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.95);
+        }
+
+        .popup-enter-active {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+            transition: all 300ms ease-out;
+        }
+
+        .popup-exit {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .popup-exit-active {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.95);
+            transition: all 300ms ease-in;
+        }
+
+        /* 添加弹窗动画 */
+        .distraction-popup {
+            animation: popupEnter 0.3s ease-out;
+        }
+
+        @keyframes popupEnter {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.9);
+            }
+
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
+
+        /* 更新小球动画 */
+        @keyframes vertical-bounce {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-80vh);
+            }
+        }
+
+        @keyframes horizontal-bounce {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            50% {
+                transform: translateX(80vw);
+            }
+        }
+
+        /* 确保关闭按钮可见 */
+        .close-btn {
+            filter: brightness(0.8);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="status-bar">
+        Time Remaining: <span id="timer">250</span>s
+    </div>
+
+    <div class="container">
+        <div id="startScreen">
+            <h1 class="text-4xl font-bold text-amber-300 mb-4">ADHD Experience Simulation</h1>
+            <p class="text-amber-100 text-lg mb-8 max-w-2xl">This is an interactive experience that simulates the
+                challenges faced by individuals with Attention Deficit Hyperactivity Disorder (ADHD) while reading. Are
+                you ready? Click the button below to begin the experience, which takes approximately 4 minutes.</p>
+            <button class="start-btn" onclick="startExperience()">Start</button>
+        </div>
+
+        <div class="article-container" id="articleContainer">
+            <div class="article-content space-y-6">
+                <h2 class="blue-heading text-2xl font-bold">ADHD: When Your Brain Is a Bouncing Squirrel</h2>
+                <p>The term Attention Deficit Hyperactivity Disorder (ADHD) might sound clinical, but it describes a
+                    common experience: some people's brains are like squirrels, always leaping from one idea to the
+                    next, struggling to focus yet bursting with creativity. ADHD is a neurodevelopmental condition that
+                    brings both challenges and incredible possibilities. In this article, we'll explore what ADHD is,
+                    its causes, how it manifests, its impact, and how to live with it. Hopefully, this will foster
+                    understanding of ADHD and those who experience it.</p>
+                <h2 class="blue-heading text-2xl font-bold">What Is ADHD? The Brain's "Squirrel Mode"</h2>
+                <p>Picture your brain as a supercomputer. Now imagine an ADHD brain as a browser with dozens of tabs
+                    open, each blaring different music, videos, or pop-up ads. ADHD, or Attention Deficit Hyperactivity
+                    Disorder, is a <span class="text-link" onclick="showInfo('axolotl')">neurodevelopmental</span>
+                    condition characterized by difficulty sustaining attention, impulsive behavior, or excessive
+                    activity. It often appears in childhood, but many people don't recognize it until adulthood.</p>
+                <p>ADHD has three main types: the inattentive type (daydreaming in class while your mind plays a movie),
+                    the hyperactive-impulsive type (can't sit still, always fidgeting or blurting things out), and the
+                    combined type (a mix of both). Interestingly, ADHD isn't about a lack of attention but about trouble
+                    regulating it. An ADHD brain is like a <span class="text-link"
+                        onclick="showInfo('sphynx')">mischievous</span> squirrel, constantly darting toward shiny new
+                    things and struggling with "boring" tasks.</p>
+                <p>Why does this happen? Scientists point to an imbalance in neurotransmitters like dopamine and
+                    norepinephrine, which regulate attention, motivation, and reward. In simple terms, ADHD brains crave
+                    rewards more intensely, so they chase instant gratification, like scrolling TikTok or gaming, while
+                    long-term tasks, such as writing reports or studying, feel torturous.</p>
+
+                <h2 class="blue-heading text-2xl font-bold">ADHD in Daily Life: Superpower and Stumbling Block</h2>
+                <p>If you know someone with ADHD, they might seem like a walking paradox: wildly creative one moment,
+                    forgetting to put the milk back in the fridge the next. ADHD varies for everyone, but some traits
+                    are common.</p>
+                <p>Take time management, for example. It's often a struggle. People with ADHD may experience "<span
+                        class="text-link" onclick="showInfo('ocean')">time blindness</span>," where time either races by
+                    or crawls like a snail. They might spend three hours obsessing over a tiny detail, only to start a
+                    major project the night before it's due. This isn't laziness; their brains struggle to prioritize.
+                    It's like being an explorer without a map, lost in a fog of "What should I do next?"</p>
+                <p>Then there's the paradox of hyperfocus. ADHD brains can sometimes over-focus. When something grabs
+                    their interest, like gaming, painting, or a niche topic, they can lose themselves for hours,
+                    forgetting to eat or sleep. This hyperfocus is a double-edged sword: it can lead to brilliance in
+                    certain areas but also cause neglect of other responsibilities.</p>
+                <p>Emotions can also be intense. People with ADHD often feel frustration or sadness over small things or
+                    burst with joy over minor wins. This isn't being dramatic; their brain's emotional regulation is a
+                    bit wobbly, like a playful kid who keeps running off track.</p>
+                <p>These traits make people with ADHD feel like both superheroes and chaos creators. ADHD isn't a flaw
+                    but a unique cognitive style, a gift, and a challenge all at once.</p>
+
+                <h2 class="blue-heading text-2xl font-bold">Why Is ADHD Misunderstood? The Story Behind the Label</h2>
+                <p>Despite decades of research, ADHD remains widely misunderstood. Some dismiss it as "kids being
+                    naughty" or "adults being lazy," or claim it's an overdiagnosed "modern condition." This stems from
+                    the fact that ADHD symptoms, like daydreaming or forgetting things, seem normal. But for those with
+                    ADHD, these aren't occasional slip-ups; they're a persistent pattern that disrupts life.</p>
+                <p>Another myth is that <span class="text-link"
+                        onclick="window.open('https://play.tetris.com/')">ADHD</span> is only a childhood issue. Many
+                    adults continue to grapple with it, though the signs shift. A child who can't sit still in class
+                    might grow into an adult who procrastinates, impulse-shops, or interrupts during meetings. Adult
+                    ADHD often goes unnoticed because society expects grown-ups to be disciplined, but for those with
+                    ADHD, discipline feels like navigating a jungle without a guide.</p>
+
+                <h2 class="blue-heading text-2xl font-bold">Living with ADHD: Embracing Your Imperfect Self</h2>
+                <p>If you or someone you know has ADHD, life can feel like an unscripted improv show, full of surprises.
+                    The good news? ADHD isn't an insurmountable barrier. With the right strategies, people with ADHD can
+                    find their groove.</p>
+                <p>First, embrace your uniqueness. ADHD isn't your whole identity; it's just how your brain works. Many
+                    find life easier when they stop fighting their "squirrel mode" and lean into it. For example,
+                    instead of beating yourself up for poor time management, use tools like calendar alerts to stay on
+                    track.</p>
+                <p>Find the right environment. People with ADHD often thrive in dynamic settings, such as creative
+                    industries, startups, or fast-paced roles, where their energy can shine. Repetitive, monotonous
+                    jobs, on the other hand, can be challenging. Knowing your strengths and choosing a path where your
+                    brain can sparkle is better than forcing yourself into a mismatched role.</p>
+                <p>Seeking support is crucial. Therapy, medication (like methylphenidate), or coaching can make a big
+                    difference, though medication isn't a cure-all. Lifestyle changes, like breaking tasks into smaller
+                    steps or setting up routines, are just as important. Surrounding yourself with understanding friends
+                    and family also provides courage to face your imperfections.</p>
+                <p>Finally, harness your superpowers. People with ADHD often have incredible creativity, sharp
+                    intuition, and out-of-the-box thinking, qualities that shine in fields like art, design, or tech.
+                    Many successful people, like actor Will Smith or Olympic swimmer Michael Phelps, have ADHD and show
+                    that it can be a source of inspiration.</p>
+
+                <h2 class="blue-heading text-2xl font-bold">A Challenge for Society: How Do We View "Different"?</h2>
+                <p>ADHD isn't just a personal story; it reflects how society treats difference. In a world obsessed with
+                    efficiency, people with ADHD are like free spirits who don't follow the usual script. Their rhythm
+                    may not match the mainstream, but they add vibrancy to our world. Can we pause and ask: Does
+                    everyone need to be a productivity machine? Is focus the only measure of success?</p>
+                <p>Understanding ADHD isn't just about creating a kinder world for those with ADHD; it's about building
+                    a more inclusive society for everyone. After all, we all have our own "squirrel moments," times when
+                    we're distracted or struggling. ADHD amplifies these moments, reminding us of the beautiful
+                    complexity of the human brain.</p>
+
+                <h2 class="blue-heading text-2xl font-bold">Conclusion: Even a Bouncing Squirrel Can Find Its Tree</h2>
+                <p>ADHD is like a lively squirrel: it might lead you astray, but it can also guide you to unexpected
+                    treasures. It shows us that life isn't a straight line but a winding adventure. Whether you have
+                    ADHD or share your life with someone who does, embracing this difference makes the world a warmer
+                    place.</p>
+                <p>So, the next time you see someone zoning out in a meeting or forgetting to reply to your text, offer
+                    a little patience; their inner squirrel might be up to some mischief. And for those with ADHD,
+                    learning to dance with that squirrel and finding your own rhythm will show you that, no matter how
+                    much your brain bounces, there's always a tree out there just for you.</p>
+            </div>
+        </div>
+
+        <div id="endScreen" class="hidden text-center">
+            <h1 class="text-4xl font-bold text-amber-300 mb-6">Experience Complete</h1>
+            <div class="bg-white p-6 rounded-lg shadow-lg max-w-2xl mx-auto">
+                <p class="text-gray-700 mb-4">This is only a simplified simulation of the daily experience of
+                    individuals with ADHD. The real ADHD experience is more complex and individualized.</p>
+                <p class="text-gray-700 mb-6">Thank you for participating. We hope this experience has enhanced your
+                    understanding for ADHD.</p>
+                <button class="start-btn" onclick="location.reload()">Try again</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let timer;
+        const distractions = new Set();
+        let socialIndex = 0;
+        const socialSchedule = [180, 195, 210];
+        const bubblePositions = [
+            { top: '10%', right: '5%' },
+            { top: '50%', left: '5%' },
+            { bottom: '10%', left: '5%' },
+            { top: '40%', right: '20%' }
+        ];
+        const style = document.createElement('style');
+        style.textContent = `
+        @keyframes vertical-bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-80vh); }
+        }
+        @keyframes horizontal-bounce {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(80vw); }
+        }
+        .close-btn {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .close-btn:hover {
+            transform: scale(1.2);
+        }
+    `;
+        document.head.appendChild(style);
+
+        const createPopup = (content, width = 'auto') => {
+            const popup = document.createElement('div');
+            popup.className = 'distraction-popup fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-xl shadow-2xl p-6 z-[9999]';
+            popup.style.width = width;
+            popup.innerHTML = `
+            <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMxZTI5M2IiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48bGluZSB4MT0iMTgiIHkxPSI2IiB4Mj0iNiIgeTI9IjE4Ii8+PGxpbmUgeDE9IjYiIHkxPSI2IiB4Mj0iMTgiIHkyPSIxOCIvPjwvc3ZnPg==" 
+                 class="close-btn"
+                 onclick="closeDistraction(this)">
+            <div class="content-box">${content}</div>
+        `;
+            document.body.appendChild(popup);
+            distractions.add(popup);
+            return popup;
+        };
+        function startExperience() {
+            document.getElementById('startScreen').style.display = 'none';
+            const articleContainer = document.getElementById('articleContainer');
+            articleContainer.style.display = 'block';
+            setTimeout(() => {
+                articleContainer.style.opacity = 1;
+                articleContainer.style.transform = 'translateY(0)';
+            }, 50);
+
+            // Timer setup
+            let seconds = 250;
+            timer = setInterval(() => {
+                seconds--;
+                document.getElementById('timer').textContent = seconds;
+                if (seconds <= 0) endExperience();
+            }, 1000);
+
+            // Schedule distractions
+            const schedule = [
+                [7, () => createThoughtBubble(0)],
+                [16, createTextShake],
+                [38, () => createThoughtBubble(1)],
+                [50, createTextSink],
+                [57, createWhiteFlash],
+                [85, () => createThoughtBubble(2)],
+                [92, () => createThoughtBubble(3)],
+                [117, createTextSink],
+                [128, createTextShake],
+                [135, createImpulsePopup],
+                [167, createPageShake],
+                [200, createDopamineDots], // 倒数50秒(250-200=50)
+                [180, () => createSocialPopup(0)],
+                [190, () => createSocialPopup(1)],
+                [200, () => createSocialPopup(2)],
+                [215, createWhiteFlash],
+                [233, createPageShake]
+            ];
+
+            schedule.forEach(([sec, func]) => {
+                setTimeout(func, sec * 1000);
+            });
+        }
+
+        function showInfo(type) {
+            const contents = {
+                axolotl: {
+                    title: "Did you know? Fun facts about the Axolotl!",
+                    content: "The Axolotl is an amazing aquatic salamander known for its 'ageless face' (neoteny) and incredible regenerative abilities. They can completely regenerate parts of their brain and spinal cord even if lost! Isn't that cool?",
+                    img: "./images/img02.png"
+                },
+                sphynx: {
+                    title: "All About Hairless Cats: The Sphynx!",
+                    content: "Hairless cats, especially the Sphynx, are an intriguing breed known for their hairless, wrinkled skin and large ears. Though they may look unusual, these cats are incredibly affectionate and often act more like little dogs than typical felines.",
+                    img: "./images/img01.png"
+                },
+                ocean: {
+                    title: "Did You Know? The Mystery of Bioluminescent Oceans!",
+                    content: "Some oceans around the world glow at night! This magical light is caused by tiny organisms called dinoflagellates. When disturbed, these microorganisms emit light as a defense mechanism. It creates an eerie, glowing effect that you can often see on beaches.",
+                    img: "./images/img03.png"
+                }
+            };
+
+            const contentHTML = `
+            <h3 class="text-xl font-bold mb-4" style="color: #525a68;">${contents[type].title}</h3>
+            ${contents[type].img ? `<img src="${contents[type].img}" class="w-full h-48 object-cover mb-4 rounded-lg">` : ''}
+            <p class="text-gray-700 leading-relaxed">${contents[type].content}</p>
+        `;
+
+            createPopup(contentHTML, '500px');
+        }
+
+        const bubbleTexts = [
+            "What should I have for dinner?",
+            "Oh no, I forgot to reply to that email...",
+            "I had such an interesting dream last night!!!",
+            "Did humans really evolve from apes???"
+        ];
+
+        function createThoughtBubble(index) {
+            const bubble = document.createElement('div');
+            bubble.className = 'thought-bubble distraction-popup';
+            Object.assign(bubble.style, {
+                ...bubblePositions[index],
+                transform: 'none'
+            });
+            bubble.innerHTML = `
+        <div class="relative">
+            <span class="absolute top-2 right-3 text-xl cursor-pointer" 
+                  onclick="closeDistraction(this)">&times;</span>
+            ${bubbleTexts[index]}
+        </div>
+    `;
+            document.body.appendChild(bubble);
+            distractions.add(bubble);
+        }
+
+        function createImpulsePopup() {
+            const popup = document.createElement('div');
+            popup.className = 'impulse-popup';
+            popup.innerHTML = `
+                <div class="relative">
+                    <span class="absolute top-1 right-2 cursor-pointer" onclick="closeDistraction(this)">×</span>
+                    <p class="font-bold text-lg">Don't Click Me</p>
+                    <p>Seriously, don't click here</p>
+                </div>
+            `;
+            popup.onclick = () => window.open('https://playsnake.org/');
+            document.body.appendChild(popup);
+            distractions.add(popup);
+        }
+
+        function createWhiteFlash() {
+            const overlay = document.createElement('div');
+            overlay.className = 'overlay';
+            document.body.appendChild(overlay);
+            overlay.style.display = 'block';
+            setTimeout(() => overlay.remove(), 3000);
+        }
+
+        function createTextSink() {
+            const article = document.getElementById('articleContainer');
+            article.style.animation = 'sink 2.5s ease-in-out 2';
+            setTimeout(() => {
+                article.style.animation = '';
+            }, 5000);
+        }
+
+        function createTextShake() {
+            const article = document.getElementById('articleContainer');
+            article.style.animation = 'shake 0.1s linear infinite';
+            setTimeout(() => {
+                article.style.animation = '';
+            }, 4000);
+        }
+
+        function createDopamineDots() {
+            const createMovingDot = (animationName, initialStyle) => {
+                const dot = document.createElement('div');
+                dot.className = 'w-6 h-6 bg-red-500 rounded-full fixed cursor-pointer';
+                Object.assign(dot.style, {
+                    position: 'fixed',
+                    animation: `${animationName} 2s ease-in-out infinite`,
+                    ...initialStyle
+                });
+                dot.onclick = () => {
+                    dot.style.transform = 'scale(1.8)';
+                    setTimeout(() => {
+                        dot.remove();
+                        distractions.delete(dot);
+                    }, 300);
+                };
+                document.body.appendChild(dot);
+                distractions.add(dot);
+            }
+
+            // 垂直弹跳小球（左侧）
+            createMovingDot('vertical-bounce', {
+                left: '20%',
+                bottom: '10%'
+            });
+
+            // 水平弹跳小球（底部）
+            createMovingDot('horizontal-bounce', {
+                left: '10%',
+                top: '80%'
+            });
+        }
+
+        function createPageShake() {
+            document.body.classList.add('earthquake');
+            setTimeout(() => document.body.classList.remove('earthquake'), 4000);
+        }
+
+        const socialMessages = [
+            {
+                text: "Do you want to watch TikTok?",
+                button: "close"
+            },
+            {
+                text: "Really don't want to watch TikTok? There are many interesting videos on it.",
+                button: "close"
+            },
+            {
+                text: "How about Instagram?",
+                button: "close"
+            }
+        ];
+
+        function createSocialPopup(index) {
+            const content = `
+                <div class="text-center">
+                    <p class="mb-4 text-lg" style="color: #525a68;">${socialMessages[index].text}</p>
+                    <button class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                        onclick="${index === 2 ? closeDistraction(this): ''}">
+                        ${socialMessages[index].button}
+                    </button>
+                </div>
+            `;
+
+            const popup = createPopup(content, '500px');
+            // 最后一个弹窗特殊处理
+            if (index === 2) {
+                popup.querySelector('button').addEventListener('click', () => {
+                    document.querySelectorAll('.distraction-popup').forEach(p => p.remove());
+                });
+            }
+        }
+
+        function closeDistraction(element) {
+            const distraction = element.closest('.distraction-popup');
+            if (distraction) {
+                distraction.style.transition = 'all 0.3s ease';
+                distraction.style.opacity = '0';
+                distraction.style.transform = 'translate(-50%, -50%) scale(0.9)';
+
+                setTimeout(() => {
+                    distraction.remove();
+                    distractions.delete(distraction);
+                    // 触发文字模糊效果
+                    document.getElementById('articleContainer').classList.add('dimmed');
+                    setTimeout(() => {
+                        document.getElementById('articleContainer').classList.remove('dimmed');
+                    }, 2000);
+                }, 300);
+            }
+        }
+
+        function endExperience() {
+            clearInterval(timer);
+            document.getElementById('articleContainer').style.display = 'none';
+            document.getElementById('endScreen').classList.remove('hidden');
+            distractions.forEach(d => d.remove());
+        }
+    </script>
+</body>
+
+</html>
